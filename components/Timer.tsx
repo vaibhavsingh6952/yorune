@@ -112,10 +112,9 @@ export default function Timer() {
       <span
         style={{
           fontFamily: "'Shippori Mincho', serif",
-          fontSize: 11,
-          letterSpacing: '0.5em',
-          color: 'rgba(255,255,255,0.2)',
-          textTransform: 'uppercase',
+          fontSize: 16,
+          letterSpacing: '0.2em',
+          color: 'rgba(255,255,255,0.3)',
           marginTop: 4,
         }}
       >

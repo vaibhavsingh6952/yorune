@@ -77,10 +77,9 @@ export default function Preloader() {
         <span
           style={{
             fontFamily: "'Shippori Mincho', serif",
-            fontSize: 12,
-            letterSpacing: '0.45em',
+            fontSize: 16,
+            letterSpacing: '0.2em',
             color: 'rgba(255,255,255,0.28)',
-            textTransform: 'uppercase',
           }}
         >
           entering your space

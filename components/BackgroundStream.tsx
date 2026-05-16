@@ -191,30 +191,11 @@ export default function BackgroundStream() {
           background: '#020205',
         }}
       >
-        {/*
-          ── Cover sizing ──────────────────────────────────────────────────
-          YouTube iframes are 16:9. On a wider-than-16:9 screen the iframe
-          fills width but leaves bars top/bottom. On a narrower screen it
-          fills height but leaves bars left/right.
-
-          Solution: size the inner container to ALWAYS be at least:
-            • as wide as viewport height × (16/9)   → fills tall screens
-            • as tall as viewport width  × (9/16)   → fills wide screens
-          Then centre it with translate(-50%,-50%) so the crop is symmetric.
-
-          The extra ±90px top/bottom and ±30px left/right hide YT chrome.
-        ──────────────────────────────────────────────────────────────────── */}
         <div
           style={{
             position: 'absolute',
             top: '50%',
             left: '50%',
-            /*
-              We need:
-                width  = max(viewportWidth  + 60px,  viewportHeight × 16/9 + chrome)
-                height = max(viewportHeight + 180px, viewportWidth  × 9/16 + chrome)
-              Using CSS max() with viewport units:
-            */
             width:  'max(calc(100vw + 60px),  calc(100vh * 1.7778 + 60px))',
             height: 'max(calc(100vh + 180px), calc(100vw * 0.5625 + 180px))',
             transform: 'translate(-50%, -50%)',
