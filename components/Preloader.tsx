@@ -38,38 +38,41 @@ export default function Preloader() {
         opacity,
         transition: 'opacity 1000ms cubic-bezier(0.4, 0, 0.2, 1)',
         pointerEvents: isPreloaderVisible ? 'all' : 'none',
+        padding: '0 24px',
+        boxSizing: 'border-box',
       }}
     >
       {/* Ambient glow */}
       <div
         style={{
           position: 'absolute',
-          width: 320,
-          height: 320,
+          width: 'min(320px, 80vw)',
+          height: 'min(320px, 80vw)',
           borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(180,160,255,0.07) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
-      {/* Wordmark only — no dots, no animation */}
       <div
         style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 12,
+          gap: 'clamp(8px, 3vw, 14px)',
           position: 'relative',
         }}
       >
         <span
           style={{
             fontFamily: "'Shippori Mincho', serif",
-            fontSize: 38,
+            // 38px on desktop, scales down to ~18px on 214px wide screen
+            fontSize: 'clamp(18px, 8vw, 38px)',
             fontWeight: 600,
             letterSpacing: '0.25em',
             color: 'rgba(255,255,255,0.88)',
             textShadow: '0 0 60px rgba(180,160,255,0.2)',
+            whiteSpace: 'nowrap',
           }}
         >
           yorune
@@ -77,9 +80,10 @@ export default function Preloader() {
         <span
           style={{
             fontFamily: "'Shippori Mincho', serif",
-            fontSize: 16,
-            letterSpacing: '0.2em',
+            fontSize: 'clamp(8px, 3vw, 12px)',
+            letterSpacing: '0.20em',
             color: 'rgba(255,255,255,0.28)',
+            whiteSpace: 'nowrap',
           }}
         >
           entering your space

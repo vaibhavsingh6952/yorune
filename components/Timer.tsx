@@ -19,29 +19,22 @@ export default function Timer() {
   const [totalSeconds, setTotalSeconds] = useState(0)
   const [hasRevealed, setHasRevealed] = useState(false)
   const [timerOpacity, setTimerOpacity] = useState(0)
-  // Keep the interval ref alive across renders — never cleared until unmount
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const hasRevealedRef = useRef(false)
 
-  // Watch for the first hide of the preloader
   useEffect(() => {
     if (!isPreloaderVisible && !hasRevealedRef.current) {
       hasRevealedRef.current = true
       setHasRevealed(true)
-
-      // Start the interval — stored in ref so it survives re-renders
       intervalRef.current = setInterval(() => {
         setTotalSeconds((prev) => prev + 1)
       }, 1000)
-
-      // Fade the timer in
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setTimerOpacity(1))
       })
     }
   }, [isPreloaderVisible])
 
-  // Only clear on true unmount
   useEffect(() => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
@@ -60,7 +53,7 @@ export default function Timer() {
 
   const colonStyle: React.CSSProperties = {
     display: 'inline-block',
-    width: '0.6em',
+    width: '0.5em',
     textAlign: 'center',
     opacity: 0.28,
     position: 'relative',
@@ -86,12 +79,17 @@ export default function Timer() {
         userSelect: 'none',
         opacity: timerOpacity,
         transition: 'opacity 1200ms cubic-bezier(0.4, 0, 0.2, 1)',
+        // Prevent overflow on narrow screens
+        width: '100%',
+        padding: '0 12px',
+        boxSizing: 'border-box',
       }}
     >
       <div
         style={{
           fontFamily: "'Shippori Mincho', serif",
-          fontSize: 'clamp(52px, 8vw, 96px)',
+          // clamp: min 28px (tiny mobile), preferred 10vw, max 96px (desktop)
+          fontSize: 'clamp(28px, 10vw, 96px)',
           fontWeight: 400,
           letterSpacing: 0,
           color: 'rgba(255,255,255,0.88)',
@@ -99,7 +97,9 @@ export default function Timer() {
           lineHeight: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: '0.18em',
+          gap: '0.15em',
+          // Don't let digits wrap or overflow
+          whiteSpace: 'nowrap',
         }}
       >
         <span style={digitStyle}>{h}</span>
@@ -112,8 +112,8 @@ export default function Timer() {
       <span
         style={{
           fontFamily: "'Shippori Mincho', serif",
-          fontSize: 16,
-          letterSpacing: '0.2em',
+          fontSize: 'clamp(9px, 2vw, 11px)',
+          letterSpacing: '0.20em',
           color: 'rgba(255,255,255,0.3)',
           marginTop: 4,
         }}

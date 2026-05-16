@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     'anime aesthetic study space',
     'lofi hip hop study',
     'deep work ambient sound',
-    'yoru night study room',
+    'yorune night study room',
     'Studio Ghibli background music',
     'japanese lofi chill',
     'focus flow timer',
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: 'https://yoru.space',
+    canonical: 'https://yorune.space',
   },
 }
 
@@ -79,7 +79,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/logo.png" type="image/png" />
         <meta name="theme-color" content="#020205" />
         <meta name="color-scheme" content="dark" />
       </head>
