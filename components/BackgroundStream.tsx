@@ -32,7 +32,7 @@ declare global {
     onYouTubeIframeAPIReady: () => void
   }
   interface YTPlayer {
-    loadVideoById: (videoId: string, startSeconds?: number) => void
+    loadVideoById: (options: { videoId: string; startSeconds: number; suggestedQuality: string }) => void
     playVideo: () => void
     seekTo: (seconds: number, allowSeekAhead: boolean) => void
     getCurrentTime: () => number
@@ -40,6 +40,8 @@ declare global {
     destroy: () => void
     getPlayerState: () => number
     setPlaybackQuality: (quality: string) => void
+    getPlaybackQuality: () => string
+    getAvailableQualityLevels: () => string[]
   }
 }
 
@@ -48,16 +50,77 @@ function getRandomStartTime(videoId: string): number {
   return Math.floor(Math.random() * duration * 0.4)
 }
 
+// Build the iframe src URL with hd1080 baked in as a URL param.
+// This is the strongest quality hint YouTube still partially honours —
+// it sets the *initial* requested quality before adaptive kicks in.
+function buildPlayerSrc(videoId: string, startSeconds: number): string {
+  const params = new URLSearchParams({
+    autoplay: '1',
+    mute: '1',
+    controls: '0',
+    disablekb: '1',
+    fs: '0',
+    iv_load_policy: '3',
+    loop: '0',
+    modestbranding: '1',
+    playsinline: '1',
+    rel: '0',
+    showinfo: '0',
+    enablejsapi: '1',
+    start: String(startSeconds),
+    // Key quality params in the URL itself
+    vq: 'hd1080',
+    hd: '1',
+  })
+  return `https://www.youtube.com/embed/${videoId}?${params.toString()}`
+}
+
+// Force the highest available quality level on the player object
+function forceHighQuality(player: YTPlayer) {
+  try {
+    // Try to get available levels and pick the best one
+    const levels = player.getAvailableQualityLevels()
+    if (levels && levels.length > 0) {
+      // levels are ordered best-first: ['hd1080', 'hd720', 'large', ...]
+      player.setPlaybackQuality(levels[0])
+    } else {
+      player.setPlaybackQuality('hd1080')
+    }
+  } catch (_) {
+    try { player.setPlaybackQuality('hd1080') } catch (_) {}
+  }
+}
+
 export default function BackgroundStream() {
   const { setCurrentVideoIndex, hidePreloader, showPreloader } = useMedia()
 
   const playerRef = useRef<YTPlayer | null>(null)
+  const iframeRef = useRef<HTMLIFrameElement | null>(null)
   const indexRef = useRef(0)
   const initialRevealDoneRef = useRef(false)
   const loopGuardRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const qualityGuardRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const transitioningRef = useRef(false)
 
-  // ─── Loop guard: seek back before video ends to avoid black frame ─────────
+  // ─── Quality guard: re-assert hd1080 every 5 s ───────────────────────────
+  // YouTube's adaptive algorithm can silently downgrade quality mid-stream.
+  // Polling and re-asserting is the only way to push back against it.
+  const startQualityGuard = useCallback(() => {
+    if (qualityGuardRef.current) clearInterval(qualityGuardRef.current)
+    qualityGuardRef.current = setInterval(() => {
+      const player = playerRef.current
+      if (!player || transitioningRef.current) return
+      try {
+        const current = player.getPlaybackQuality()
+        // If we've dropped below hd720, push back to hd1080
+        if (current !== 'hd1080' && current !== 'hd720') {
+          forceHighQuality(player)
+        }
+      } catch (_) {}
+    }, 5000)
+  }, [])
+
+  // ─── Loop guard: seek back before video ends ──────────────────────────────
   const startLoopGuard = useCallback(() => {
     if (loopGuardRef.current) clearInterval(loopGuardRef.current)
     loopGuardRef.current = setInterval(() => {
@@ -81,13 +144,22 @@ export default function BackgroundStream() {
     transitioningRef.current = true
     showPreloader()
     if (loopGuardRef.current) clearInterval(loopGuardRef.current)
+    if (qualityGuardRef.current) clearInterval(qualityGuardRef.current)
+
     const next = (indexRef.current + 1) % VIDEO_IDS.length
     indexRef.current = next
     setCurrentVideoIndex(next)
+
     setTimeout(() => {
       if (playerRef.current) {
         const id = VIDEO_IDS[next]
-        playerRef.current.loadVideoById(id, getRandomStartTime(id))
+        const start = getRandomStartTime(id)
+        // loadVideoById with suggestedQuality — strongest API-level hint
+        playerRef.current.loadVideoById({
+          videoId: id,
+          startSeconds: start,
+          suggestedQuality: 'hd1080',
+        })
       }
       transitioningRef.current = false
     }, 400)
@@ -95,8 +167,7 @@ export default function BackgroundStream() {
 
   // ─── Player events ────────────────────────────────────────────────────────
   const onPlayerReady = useCallback((event: { target: YTPlayer }) => {
-    // Force highest quality immediately on ready
-    try { event.target.setPlaybackQuality('hd1080') } catch (_) {}
+    forceHighQuality(event.target)
     event.target.playVideo()
   }, [])
 
@@ -106,21 +177,24 @@ export default function BackgroundStream() {
       const { PlayerState } = window.YT
 
       if (event.data === PlayerState.PLAYING) {
-        // Force quality every time playback starts (YT resets it on seeks)
-        try { playerRef.current?.setPlaybackQuality('hd1080') } catch (_) {}
-
+        forceHighQuality(playerRef.current!)
         if (!transitioningRef.current) {
           if (!initialRevealDoneRef.current) {
             initialRevealDoneRef.current = true
           }
           hidePreloader()
           startLoopGuard()
+          startQualityGuard()
         }
+      }
+
+      if (event.data === PlayerState.BUFFERING) {
+        // Re-assert quality every time buffering starts
+        try { forceHighQuality(playerRef.current!) } catch (_) {}
       }
 
       if (event.data === PlayerState.ENDED) advanceVideo()
 
-      // Unstarted after load — give 4 s then skip
       if (event.data === -1) {
         setTimeout(() => {
           try {
@@ -130,7 +204,7 @@ export default function BackgroundStream() {
         }, 4000)
       }
     },
-    [hidePreloader, advanceVideo, startLoopGuard]
+    [hidePreloader, advanceVideo, startLoopGuard, startQualityGuard]
   )
 
   const onError = useCallback(() => advanceVideo(), [advanceVideo])
@@ -138,10 +212,17 @@ export default function BackgroundStream() {
   // ─── Init ─────────────────────────────────────────────────────────────────
   const initPlayer = useCallback(() => {
     if (!window.YT?.Player) return
+
     const startIndex = Math.floor(Math.random() * VIDEO_IDS.length)
     indexRef.current = startIndex
     setCurrentVideoIndex(startIndex)
     const startId = VIDEO_IDS[startIndex]
+    const startTime = getRandomStartTime(startId)
+
+    // Swap the iframe src to the quality-baked URL before creating the player
+    if (iframeRef.current) {
+      iframeRef.current.src = buildPlayerSrc(startId, startTime)
+    }
 
     playerRef.current = new window.YT.Player('yt-bg', {
       videoId: startId,
@@ -158,10 +239,9 @@ export default function BackgroundStream() {
         rel: 0,
         showinfo: 0,
         enablejsapi: 1,
-        start: getRandomStartTime(startId),
-        // Request highest quality — YouTube still decides final delivery
-        // but this hints to start at 1080p if bandwidth allows
+        start: startTime,
         vq: 'hd1080',
+        hd: 1,
       },
       events: { onReady: onPlayerReady, onStateChange, onError },
     })
@@ -172,6 +252,7 @@ export default function BackgroundStream() {
     else window.onYouTubeIframeAPIReady = initPlayer
     return () => {
       if (loopGuardRef.current) clearInterval(loopGuardRef.current)
+      if (qualityGuardRef.current) clearInterval(qualityGuardRef.current)
       try { playerRef.current?.destroy() } catch (_) {}
     }
   }, [initPlayer])
@@ -180,7 +261,6 @@ export default function BackgroundStream() {
     <>
       <Script src="https://www.youtube.com/iframe_api" strategy="lazyOnload" />
 
-      {/* ── Viewport clip ── */}
       <div
         style={{
           position: 'fixed',
@@ -191,12 +271,19 @@ export default function BackgroundStream() {
           background: '#020205',
         }}
       >
+        {/*
+          Cover sizing: the iframe is always larger than the viewport in
+          both dimensions so no letterboxing on any aspect ratio.
+            width  = max(vw + chrome, vh × 16/9 + chrome)
+            height = max(vh + chrome, vw × 9/16 + chrome)
+          Centred with translate(-50%,-50%).
+        */}
         <div
           style={{
             position: 'absolute',
             top: '50%',
             left: '50%',
-            width:  'max(calc(100vw + 60px),  calc(100vh * 1.7778 + 60px))',
+            width: 'max(calc(100vw + 60px), calc(100vh * 1.7778 + 60px))',
             height: 'max(calc(100vh + 180px), calc(100vw * 0.5625 + 180px))',
             transform: 'translate(-50%, -50%)',
           }}
