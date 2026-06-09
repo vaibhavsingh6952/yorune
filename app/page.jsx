@@ -50,6 +50,7 @@ export default function AnimeSchedulePage() {
 
     const accentColor = mode === "anime" ? "#ec4899" : "#f59e0b";
     const todayDay = JS_DAY[new Date().getDay()];
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 480;
 
     // ── Donghua fetch ────────────────────────────────────────────
     const { data: donghuaRaw, isFetching: isDonghuaFetching, isLoading: isDonghuaLoading, error: donghuaError } = useQuery({
@@ -185,7 +186,7 @@ export default function AnimeSchedulePage() {
         .card-img { transition: box-shadow .18s ease; border-radius: 8px; overflow: hidden; }
         .watch-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; text-decoration: none; transition: opacity .15s, transform .15s; }
         .watch-btn:hover { opacity: .85; transform: translateY(-1px); }
-        .toggle-btn { padding: 6px 18px; border-radius: 8px; border: none; font-size: 13px; font-weight: 700; cursor: pointer; transition: all .2s; }
+        .toggle-btn { padding: isMobile ? "5px 10px" : "6px 18px"; border-radius: 8px; border: none; fontSize: isMobile ? 11 : 13; font-weight: 700; cursor: pointer; transition: all .2s; }
         .read-more-btn { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
         .close-btn { background: rgba(255,255,255,.1); border: none; color: #fff; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
         .close-btn:hover { background: rgba(255,255,255,.2); }
@@ -216,7 +217,7 @@ export default function AnimeSchedulePage() {
                     borderBottom: "1px solid rgba(255,255,255,.06)",
                 }}
             >
-                <h1 style={{ fontSize: 19, fontWeight: 900, letterSpacing: "-.4px" }}>
+                <h1 style={{ fontSize: 15, fontWeight: 900, letterSpacing: "-.4px" }}>
                     <span style={{ color: accentColor }}>YORUNE</span>.SPACE
                 </h1>
                 <div
@@ -271,6 +272,7 @@ export default function AnimeSchedulePage() {
                             accentColor={accentColor}
                             onOpenShow={setSelectedShow}
                             mode={mode}
+                            isMobile={isMobile}
                         />
                     );
                 })}
@@ -290,7 +292,7 @@ export default function AnimeSchedulePage() {
 }
 
 // ─────────────────────────────────────────────────────────────
-function ShowCard({ show, accentColor, onOpen }) {
+function ShowCard({ show, accentColor, onOpen, isMobile }) {
     const ep =
         show.type === "donghua"
             ? show.nextEpisode
@@ -302,13 +304,13 @@ function ShowCard({ show, accentColor, onOpen }) {
         <div
             className="card"
             onClick={onOpen}
-            style={{ flexShrink: 0, width: 115 }}
+            style={{ flexShrink: 0, width: isMobile ? 85 : 115 }}
         >
             <div
                 className="card-img"
                 style={{
                     position: "relative",
-                    height: 110,
+                    height: isMobile ? 80 : 110,
                     background: "rgba(255,255,255,.05)",
                     marginBottom: 7,
                     boxShadow: "0 0 0 1px rgba(255,255,255,.08)",
@@ -573,7 +575,7 @@ function ShowModal({ show, mode, accentColor, onClose }) {
                             <div style={{ flex: 1, paddingTop: 2 }}>
                                 <h2
                                     style={{
-                                        fontSize: 17,
+                                        fontSize: isMobile ? 14 : 19,
                                         fontWeight: 800,
                                         lineHeight: 1.35,
                                         marginBottom: 5,
@@ -886,6 +888,7 @@ function DayRow({
     accentColor,
     onOpenShow,
     mode,
+    isMobile,
 }) {
     const scrollRef = useRef(null);
     const [isHovered, setIsHovered] = useState(false);
@@ -931,9 +934,9 @@ function DayRow({
             {/* Day label — sticky on the left within the row */}
             <div
                 style={{
-                    width: 70,
-                    minWidth: 70,
-                    flexShrink: 0,
+                    width: 48,
+                    width: isMobile ? 44 : 70,
+                    minWidth: isMobile ? 44 : 70,
                     position: "sticky",
                     left: 0,
                     zIndex: 5,
@@ -1014,6 +1017,7 @@ function DayRow({
                             show={show}
                             accentColor={accentColor}
                             onOpen={() => onOpenShow(show)}
+                            isMobile={isMobile}
                         />
                     ))}
                 {empty && (

@@ -7,3 +7,7 @@
     @apply outline-none focus:outline-none;
   }
 }
+
+@media (max-width: 480px) {
+  .toggle-btn { padding: 5px 10px; font-size: 11px; }
+}
