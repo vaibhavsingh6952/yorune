@@ -325,7 +325,7 @@ function ShowCard({ show, accentColor, onOpen, isMobile }) {
                         objectFit: "cover",
                         display: "block",
                     }}
-                    loading="lazy"
+                    loading="eager"
                 />
                 {show.score && (
                     <div
@@ -441,7 +441,7 @@ function ShowModal({ show, mode, accentColor, onClose }) {
                     if (alive)
                         setInfo({
                             title: d.title,
-                            titleSub: d.title_japanese,
+                            title: item.title_english || item.title, 
                             image: d.images?.jpg?.large_image_url || d.images?.jpg?.image_url,
                             score: d.score,
                             status: d.status,
