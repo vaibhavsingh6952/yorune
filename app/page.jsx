@@ -186,7 +186,7 @@ export default function AnimeSchedulePage() {
         .card-img { transition: box-shadow .18s ease; border-radius: 8px; overflow: hidden; }
         .watch-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px; text-decoration: none; transition: opacity .15s, transform .15s; }
         .watch-btn:hover { opacity: .85; transform: translateY(-1px); }
-        .toggle-btn { padding: isMobile ? "5px 10px" : "6px 18px"; border-radius: 8px; border: none; fontSize: isMobile ? 11 : 13; font-weight: 700; cursor: pointer; transition: all .2s; }
+        .toggle-btn { padding: 5px 10px; border-radius: 8px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .2s; }
         .read-more-btn { background: none; border: none; cursor: pointer; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; }
         .close-btn { background: rgba(255,255,255,.1); border: none; color: #fff; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: background .15s; }
         .close-btn:hover { background: rgba(255,255,255,.2); }
@@ -575,7 +575,7 @@ function ShowModal({ show, mode, accentColor, onClose }) {
                             <div style={{ flex: 1, paddingTop: 2 }}>
                                 <h2
                                     style={{
-                                        fontSize: isMobile ? 14 : 19,
+                                        fontSize: 15,
                                         fontWeight: 800,
                                         lineHeight: 1.35,
                                         marginBottom: 5,
@@ -934,7 +934,6 @@ function DayRow({
             {/* Day label — sticky on the left within the row */}
             <div
                 style={{
-                    width: 48,
                     width: isMobile ? 44 : 70,
                     minWidth: isMobile ? 44 : 70,
                     position: "sticky",
