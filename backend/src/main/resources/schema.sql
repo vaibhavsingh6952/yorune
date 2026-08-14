@@ -1,0 +1,40 @@
+CREATE TYPE user_role as ENUM ('USER','ADMIN')
+CREATE TYPE resource_type as ENUM ('desk','room','cabin')
+CREATE TYPE booking_status as ENUM ('PENDING','CONFIRMED','CANCELLED')
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role user_role DEFAULT 'USER',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS resources (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    type resource_type NOT NULL,
+    capacity INT NOT NULL,
+    location VARCHAR(150) NOT NULL,
+    photo_url VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS slots (
+    id BIGSERIAL PRIMARY KEY,
+    resource_id BIGINT REFERENCES resources(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    start_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    status booking_status DEFAULT 'PENDING',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS waitlist (
+    id BIGSERIAL PRIMARY KEY,
+    resource_id BIGINT REFERENCES resources(id) ON DELETE CASCADE,
+    user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
+    desired_start TIMESTAMP WITH TIME ZONE NOT NULL,
+    desired_end TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
