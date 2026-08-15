@@ -9,6 +9,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
+@Component
 public class JwtUtils {
     @Value("${jwt.secret:SuperSecretKeyThatIsAtLeast32BytesLongForHS256Algorithm}")
     private String jwtSecret;
