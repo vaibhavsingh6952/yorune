@@ -45,6 +45,50 @@ public class BookingServiceConcurrencyTest {
         testResourceId = res.getId();
     }
 
+    @Test
+    @DisplayName("PESSIMISTIC lock rejects concurrent double-booking attempts")
+    void pessimisticBooking_ConcurrentRequests_PreventsDoubleBooking() throws InterruptedException {
+        int numberOfThreads = 2;
+        ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+        CountDownLatch latch = new CountDownLatch(1);
+
+        OffsetDateTime start = OffsetDateTime.now().plusDays(1);
+        OffsetDateTime end = start.plusHours(2);
+        CreateBookingRequest request = new CreateBookingRequest(testResourceId, start, end);
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failureCount = new AtomicInteger(0);
+
+        executorService.submit(() -> {
+            try {
+                latch.await();
+                bookingService.createBookingPessimistic(request, user1Email);
+                successCount.incrementAndGet();
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+            }
+        });
+
+        executorService.submit(() -> {
+            try {
+                latch.await();
+                bookingService.createBookingPessimistic(request, user2Email);
+                successCount.incrementAndGet();
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+            }
+        });
+
+        latch.countDown();
+        executorService.shutdown();
+        executorService.awaitTermination(5, TimeUnit.SECONDS);
+
+        // Exactly ONE booking succeeds, and ONE fails with an overlap exception
+        assertEquals(1, successCount.get(), "Only one request should succeed!");
+        assertEquals(1, failureCount.get(), "The overlapping request must be rejected!");
+        assertEquals(1, bookingRepository.count(), "Only one booking record must exist in PostgreSQL!");
+    }
+
     @Test 
     @DisplayName("NAIVE logic allows double-booking when requests are concurrent")
     void naiveBooking_ConcurrentRequests_CauseDoubleBooking() throws InterruptedException {
