@@ -2,10 +2,11 @@ package com.booking.backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
+@EnableAsync // enable background thread pool execution for async event listeners
 public class BackendApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(BackendApplication.class, args);
 	}

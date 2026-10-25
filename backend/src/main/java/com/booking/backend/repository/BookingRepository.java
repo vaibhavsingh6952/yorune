@@ -23,5 +23,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         @Param("statuses") List<BookingStatus> statuses
 
     );
+    // Derived query or explicit JPQL for finding pending abandoned bookings
+    @Query("SELECT b FROM Booking b WHERE b.status = :status AND b.createdAt < :threshold")
+    List<Booking> findByStatusAndCreatedAtBefore(
+            @Param("status") BookingStatus status, 
+            @Param("threshold") OffsetDateTime threshold
+    );
     List<Booking> findByUserId(Long UserId);
 }

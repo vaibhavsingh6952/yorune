@@ -1,10 +1,14 @@
 package com.booking.backend.service;
 
 import com.booking.backend.dto.AuthDTOs.CreateBookingRequest;
+import com.booking.backend.dto.BookingEvent;
+import com.booking.backend.event.BookingCreatedEvent;
 import com.booking.backend.dto.AuthDTOs.BookingResponse;
 import com.booking.backend.model.*;
 import com.booking.backend.repository.*;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +20,10 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
+    private final BookingEventPublisher eventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Transactional 
+    @Transactional                                                                                                              
     public BookingResponse createBookingPessimistic(CreateBookingRequest request, String userEmail) {
         User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new IllegalArgumentException("User not found"));
         // if any second thread attempting to fetch this resource will block right here
@@ -44,6 +50,24 @@ public class BookingService {
                                   .build();
 
         Booking saved = bookingRepository.save(booking);
+
+        // publish real time event to all the connected SSE events
+        eventPublisher.publishEvent(new BookingEvent(
+                "BOOKING_CREATED",
+                saved.getId(),
+                resource.getId(),
+                user.getId(),
+                saved.getStartTime(),
+                saved.getEndTime()
+        ));
+        
+        // publish async event inside the transactional boundary for MongoDB audit logging
+        applicationEventPublisher.publishEvent(new BookingCreatedEvent(
+                saved.getId(),
+                resource.getId(),
+                user.getId(),
+                user.getEmail()
+        ));
 
         return new BookingResponse(saved.getId(),
                                 resource.getId(), 
