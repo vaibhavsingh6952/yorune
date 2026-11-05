@@ -71,13 +71,13 @@ services:
     build:
       context: ./frontend
       dockerfile: DockerFile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080/api
     container_name: yorune-frontend
     depends_on:
       - backend
     ports:
       - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8080/api
 
 volumes:
   pgdata:

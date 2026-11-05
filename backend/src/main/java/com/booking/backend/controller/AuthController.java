@@ -4,6 +4,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +18,7 @@ import com.booking.backend.model.User;
 import com.booking.backend.repository.UserRepository;
 import com.booking.backend.security.JwtUtils;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +29,21 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
+
+    /**
+     * CSRF bootstrap for the SPA. Accessing the token forces generation and the
+     * Set-Cookie of the readable XSRF-TOKEN cookie (deferred save-on-access).
+     * The frontend must call this before its first mutating request and echo the
+     * cookie value in the X-XSRF-TOKEN header thereafter.
+     */
+    @GetMapping("/csrf")
+    public ResponseEntity<Void> issueCsrfToken(HttpServletRequest request) {
+        CsrfToken csrfToken = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        if (csrfToken != null) {
+            csrfToken.getToken(); // intentionally read: triggers generation + cookie write
+        }
+        return ResponseEntity.ok().build();
+    }
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody @Valid SignupRequest request) {
