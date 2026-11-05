@@ -1,5 +1,7 @@
 package com.booking.backend.controller;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,11 +44,39 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request) {
-        User user = userRepository.findByEmail(request.email()).orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Invalid email or password");
         }
+        
         String token = jwtUtils.generateToken(user.getEmail(), user.getRole().name());
-        return ResponseEntity.ok(new AuthResponse(token, user.getEmail(), user.getRole().name()));
+
+        ResponseCookie jwtCookie = ResponseCookie.from("token", token)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60) 
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .body(new AuthResponse(token, user.getEmail(), user.getRole().name()));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout() {
+        ResponseCookie blankCookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, blankCookie.toString())
+                .body("Logged out successfully");
     }
 }
