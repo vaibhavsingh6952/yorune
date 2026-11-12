@@ -1,7 +1,6 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ensureCsrfToken } from '@/lib/api';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -14,15 +13,10 @@ export default function LoginPage() {
         setError('');
 
         try{
-            const xsrf = await ensureCsrfToken();
             const res = await fetch('http://localhost:8080/api/auth/login', {
                 method: 'POST',
-                headers: {
-                    'Content-type': 'application/json',
-                    ...(xsrf ? { 'X-XSRF-TOKEN': xsrf } : {}),
-                },
+                headers: { 'Content-type': 'application/json'},
                 body: JSON.stringify({ email, password }),
-                credentials: 'include', // required to store the HttpOnly auth cookie cross-origin
             });
             if(!res.ok) throw new Error('Invalid email or password');
             const data = await res.json();
@@ -33,6 +27,7 @@ export default function LoginPage() {
             setError(err.message);
         }
     };
+    
     return (
         <main className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-6">
             <div className="w-full max-w-md bg-gray-900 border border-gray-800 p-8 rounded-2xl shadow-xl">
